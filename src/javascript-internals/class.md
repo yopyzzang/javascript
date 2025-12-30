@@ -111,7 +111,7 @@ class Book extends Publication {
         super(
             bookDetails.title,
             bookDetails.author,
-            bookDetails.publishedOn
+            bookDetails.pubDate
         );
         this.publisher = bookDetails.publisher;
         this.ISBN = bookDetails.ISBN;
@@ -140,7 +140,7 @@ class BlogPost extends Publication {
 var YDKJSY = new Book({
     title: "You Don't Know JS Yet",
     author: "카일 심슨",
-    publishedOn: "2020년 1월",
+    pubDate: "2020년 1월",
     publisher: "독립 출판",
     ISBN: "979-8602477429"
 });
