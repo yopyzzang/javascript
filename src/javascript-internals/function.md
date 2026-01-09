@@ -32,7 +32,7 @@ function awesomeFunction(coolThing) {
 
 함수 선언은 컴파일 단계에서 발견되며, 엔진은 이 스코프에 어떤 함수 선언들이 존재하는지를 미리 기록해 둔다.  
 그리고 전역 실행 컨텍스트가 생성되는 시점에, 이 정보를 사용해 식별자와 함수 객체를 즉시 바인딩한다.
-
+7
 함수 표현식 (Function expression)
 ----
 함수 선언문과 달리 아래 예제는 함수 표현식이라고 부른다.  
@@ -58,3 +58,83 @@ awesomeFunction -> <uninitialized> // TDZ(Temporal Dead Zone)
 실제로 let,const를 키워드로 사용해 변수를 선언한 경우에는 ReferenceError가 발생하고, var을 키워드로 사용해 변수를 선언하면 TypeError가 발생한다.  
 ```
 함수 표현식은 함수 객체가 실제 바이트코드가 실행되는 시점에 생성되기 때문에 위 예시와 같은 오류가 발생함.
+
+다양한 형태의 함수
+----
+위 예제 코드의 함수는 익명 함수 표현식(anonymous function expression)임.   
+익명 함수 표현식은 function 키워드와 매개변수가 들어갈 괄호 사이에 함수 이름을 나타내는 식별자가 없는 경우를 말함.   
+예제 코드에서 변수에 익명 함수 표현식을 할당해주었기 때문에 JS에서는 함수의 이름을 awesomeFunction으로 추론함.   
+
+아래는 기명 함수 표현식(named function expression) 예제 코드임.   
+```javascript
+// let awesomeFunction = ...
+// var awesomeFunction = ...
+const awesomeFunction = function someFunction(coolThing) {
+    console.log(coolThing);
+    return amazingStuff;
+}
+awesomeFunction.name = 'namedFunction'; // name 프로퍼티를 사용해 지정한 이름보다 직접 지정한 이름이 우선순위가 높음
+console.log(awesomeFunction.name); // someFunction
+```
+해당 코드는 컴파일 중에 식별자 someFunction과 함수 표현식에 직접적인 연관이 생김.   
+단, 식별자 awesomeFunction과의 연관 관계는 해당 구문이 실행될 때(런타임)까지는 발생하지 않음.   
+또한 직접 지정한 이름(someFunction)은 name 프로퍼티를 사용해 지정한 이름보다 우선순위가 높음.   
+아래는 함수의 여러가지 선언 방식의 예제임.  
+```javascript
+/**
+ * 제네레이터 함수는 호출 즉시 실행되지 않고 정지 상태로 존재하고, 이터레이터 객체를 반환함.
+ * 아래는 제네레이터 함수 예제임.
+ **/
+function* generatorFunction() {
+    yield 1;
+    yield 2;
+    yield 3;
+}
+const gen = generatorFunction();
+gen(); // gen {<suspended>} (V8 기준)
+gen.next(); // { value: 1, done: false }
+gen.next(); // { value: 2, done: false }
+gen.next(); // { value: 3, done: false }
+gen.next(); // { value: undefined, done: true }
+
+/** 
+ * 비동기 함수는 작업이 완료되기를 기다리지 않고 다음 코드를 실행하도록 하고, return 값은 프로미스 객체로 감싸져 반환됨.(Promise.resolve(value))
+ * 아래는 비동기 함수 예제임.
+ **/
+async function asyncFunction() {
+    console.log(1);
+    await Promise.resolve(); // await는 Promise가 resolve 될 때까지 현재 async 함수 실행을 일시적으로 중단함.
+    console.log(2);
+}
+console.log(0);
+asyncFunction();
+console.log(3);
+// 출력 순서: 0 -> 1 -> await -> 3 -> 2
+
+/**
+ * 비동기 제네레이터 함수는 호출 시 즉시 실행되지 않고 정지 상태로 존재하고, 이터레이터 객체를 반환함.
+ * 해당 이터레이터 객체의 next() 는 Promise로 반환됨.
+ **/
+async function* asyncGen() {
+    yield 1;
+    yield 2;
+}
+asyncGen(); // asyncGen {<suspended>}
+asyncGen().next(); // Promise {<fulfilled>: {…}}
+await asyncGen().next() // { value: 1, done: false }
+
+// Generator + await 활용 예시
+async function* asyncGen() {
+    for (let i = 0; i < 3; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        yield i;
+    }
+}
+
+// 비동기 IIFE(즉시 실행 화살표 함수 표현식)
+(async () => {
+    for await (const v of asyncGen()) {
+        console.log(v);
+    }
+})();
+```
