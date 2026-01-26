@@ -68,3 +68,85 @@ LexicalEnvironment {
 이를 실행 컨텍스트(Execution Context)가 참조함.  
 함수가 호출될 때는 LE와 EC가 생성되며 이는 동일한 함수가 여러번 호출되어도 매 번 생성됨. 단, 비효율적이라면 엔진에서 판단하여 최적화함.   
 JS에서 스코프를 탐색할 때 찾으려는 변수나 함수가 없을 경우에 본인 스코프의 바깥(외부) 스코프를 참조하여 올라가도록 구현되어 있음.   
+
+함수 이름 스코프
+----
+함수 선언문은 아래와 예시와 같이 작성되며 해당 함수의 스코프는 전역 스코프에 askQuestion이라는 식별자를 생성함.
+```javascript
+function askQuestion() {
+    // 함수 선언문
+}
+```
+함수 표현식은 아래와 같이 작성되며, 해당 표현식의 스코프는 외부 스코프(전역 또는 현재 함수 스코프)에 그침.   
+ofTheTeacher의 스코프는 함수 표현식 자체의 내부임. 즉 ofTheTeacher 식별자는 함수 안에 식별자 그 자체로 선언됨.
+```javascript
+var askQuestion = function ofTheTeacher() {
+    "use strict"
+    var innerVar = "hello";
+    // ofTheTeacher 함수는 기명 함수 표현식 자체가 만드는 내부 스코프에서만 접근 가능
+    console.log(ofTheTeacher);
+    ofTheTeacher = 123 // TypeError: Assignment to constant variable.
+}
+
+askQuestion(); // function ofTheTeacher()...
+
+// 함수 외부 스코프에서는 접근할 수 없음.
+console.log(ofTheTeacher); // Reference Error: ofTheTeacher is not defined
+```
+위 기명 함수 표현식의 스코프 환경은 아래와 같음
+```text
+Lexical Environment 1 (전역 또는 상위 스코프)
+  ↓
+Lexical Environment 2 (함수 이름 바인딩)
+  [[OuterEnv]]: → Lexical Environment 1
+  - ofTheTeacher: [Function Object]
+  ↓
+Lexical Environment 3 (함수 본문)
+  [[OuterEnv]]: → Lexical Environment 2
+  - innerVar: "hello"
+```
+중간 단계의 렉시컬환경을 별도로 엔진이 구성하는 이유는 함수 이름을 불변으로 보호하면서 함수 본문의 변수들과 격리하고 재귀 호출 시 항상 자기 자신을 정확히 참조하도록 보장하기 위해서임.
+
+화살표 함수
+----
+ES6에서는 언어 차원에서 함수 표현식을 만들 수 있는 새로운 방법인 화살표 함수가 도입되었음. 이를 사용하면 function 키워드를 사용하지 않고도 함수를 정의할 수 있음.   
+화살표 함수는 렉시컬 스코프 관점에서 익명으로 취급되며 함수를 참조하는 연관 식별자와 직접적으로 연결되어 있지 않고 자체적으로 추론함.
+```javascript
+var askQuestion = () => {
+    // ...
+};
+
+askQuestion.name; // askQuestion
+```
+화살표 함수와 function 키워드를 통해 선언한 함수는 익명이라는 특성 이외에는 동일한 렉시컬 스코프 규칙을 적용받음.   
+화살표 함수 역시 함수가 정의된 위치에 따라 스코프가 결정되며, 변수 조회 규칙(스코프 체인 탐색) 역시 동일함.   
+단, 화살표 함수는 this, argument, super 가 동적으로 바인딩되는 것이 아닌 렉시컬 바인딩됨.
+```javascript
+var globalVar = "global";
+
+function outer() {
+    var outerVar = "outer";
+    
+    // 일반 함수
+    function regularFunc() {
+        var localVar = "local";
+        
+        console.log(globalVar); // ✅ 렉시컬 스코프
+        console.log(outerVar);  // ✅ 렉시컬 스코프
+        console.log(localVar);  // ✅ 자체 스코프
+        console.log(this);      // ❌ 동적 바인딩
+        console.log(arguments); // ❌ 자체 arguments
+    }
+    
+    // 화살표 함수
+    const arrowFunc = () => {
+        var localVar = "local";
+        
+        console.log(globalVar); // ✅ 렉시컬 스코프
+        console.log(outerVar);  // ✅ 렉시컬 스코프
+        console.log(localVar);  // ✅ 자체 스코프
+        console.log(this);      // ✅ 렉시컬 바인딩 (상위의 this)
+        console.log(arguments); // ✅ 렉시컬 바인딩 (상위의 arguments)
+    };
+}
+```
