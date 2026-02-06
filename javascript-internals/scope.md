@@ -149,3 +149,24 @@ function outer() {
     };
 }
 ```
+
+Node.js
+----
+Node.js에서는 엔트리 파일을 포함해 모든 JS파일을 모듈로 처리함. 브라우저에서 파일을 로드할 때와는 다르게 각 JS 파일이 자체적으로 스코프를 갖음.   
+태생적으로 CommonJS라는 모듈 형식을 지원했는데 이는 코드를 함수로 감싸 var, function 선언이 전역 변수로 취급되는 것을 방지하고 선언들을 함수 스코프에 포함시킴.   
+아래는 가상의 코드 예시임.   
+```javascript
+function Module(module, require, __dirname, ...) {
+    var petName = "요피";
+    
+    function hello() {
+        console.log(`${petName} 안녕!`);
+    }
+    
+    hello();
+    
+    module.export.hello = hello;
+}
+```
+Node.js는 추가 함수 Module()을 호출해 모듈을 실행함. 식별자들이 전역에 선언되어 있지 않고 모듈 스코프에 주입됨.   
+전역 변수를 선언하려면 global에 프로퍼티를 추가하는 것이 유일한 방법임.
