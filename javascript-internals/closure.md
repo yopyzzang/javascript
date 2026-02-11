@@ -1,7 +1,6 @@
 클로저 (Closure)
 ====
-클로저란 함수가 정의된 스코프가 아닌 다른 스코프에서 함수가 실행되더라도, 스코프 밖에 있는 변수를 기억하고 이 외부 변수에 계속 접근할 수 있는 경우를 의미함.   
-JS에서 함수는 자신의 렉시컬 환경을 기억하며 외부 변수를 참조하는 경우 클로저를 형성한다.
+클로저란 함수가 자신의 외부 렉시컬 환경을 기억하고, 외부 함수가 종료된 후에도 그 환경에 접근할 수 있는 것을 의미함.   
 
 아래는 클로저의 예시임.
 ```javascript
@@ -56,6 +55,65 @@ Execution Phase:
             - LE_inner ER 확인 → 없음
             - Outer (LE_outer) -> x -> 1
 ```
+추가적으로 클로저는 복제본을 스냅숏한 데이터가 아닌, 메모리를 위치를 직접 가르키는 라이브 링크이다.   
+외부 함수가 끝난 후에도 외부 함수의 렉시컬 환경을 참조하는 경우, 메모리에는 함수의 Lexical Environment가 남아있기 때문에 값을 변경하면 변경 즉시 값이 반영됨.
+
+클로저가 아닌 경우
+----
+아래는 클로저가 아닌 경우의 예시임.
+```javascript
+function say(myName) {
+    var greeting = "hi";
+    output();
+
+    function output() {
+        console.log(`${greeting} ${myName}`);
+    }
+}
+
+say("yopy");
+```
+```text
+Global Execution Context (EC_global)   
+
+Creation Phase:
+- Lexical Environment (LE_global)
+    - Environment Record
+        - say → FunctionObject ([[Environment]] → LE_global)
+    - [[Outer]] → null
+
+Execution Phase:
+- say("yopy");
+    - say 함수 평가 -> say 함수 객체 찾기 (LE_global)
+    - say 함수 호출
+        - Execution Context (EC_say) 생성 (PrepareForOrdinaryCall)
+        - Creation Phase
+            - Lexical Environment (LE_say)
+                - Environment Record
+                    - myName - "yopy"
+                    - greeting -> undefined
+                    - output -> FunctionObject ([[Environment]] -> LE_say)
+                - [[Outer]] -> LE_global
+        - Execution Phase
+            - var greeting = 'hi' 실행 (LE_outer -> ER -> greeting -> 'hi')
+            - output();
+                - Execution Context (EC_output) 생성
+                - Creation Phase
+                    - Lexical Environment (LE_output)
+                        - Environment Record
+                            - Empty
+                    - [[Outer]] -> LE_say (say.[[Environment]])
+                - Execution Phase
+                    - console.log(`${greeting} ${myName}`); 실행
+                        - LE_output ER 확인 → 없음
+                        - Outer (LE_say) -> greeting + myName -> hi yopy
+                        - EC_output 종료 (Call Stack 에서 제거 (EC_output pop))
+            - EC_say 종료 (Call Stack 에서 제거 (EC_say pop))
+```
+즉 위 예제에서는 내부 함수(output)가 외부 함수(say)가 종료되기 전에 먼저 종료되고 외부 함수 밖으로 탈출하지 않기 때문에,   
+외부 함수의 렉시컬 환경(LE_say)을 참조하는 것이 아무것도 남지 않음.   
+따라서 LE_say는 GC 대상이 되어 메모리에서 제거됨.
+
 
 어휘적 환경(Lexical Environment)
 ----
